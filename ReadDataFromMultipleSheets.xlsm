@@ -1,0 +1,191 @@
+Private Sub CommandButton1_Click()
+
+Dim mySheet As Worksheet
+Dim myActiveSheet As Worksheet
+Dim mySheet_Dump As Worksheet
+Dim LastRow As Long
+Dim LastCol As Long
+Dim TC_Name As String
+Dim defectID As String
+Set mySheet = ThisWorkbook.Worksheets(ActiveSheet.TextBox1.Text)
+Set myActiveSheet = ThisWorkbook.ActiveSheet
+Set mySheet_Dump = ThisWorkbook.Worksheets("Dump")
+
+''Clear active cell values
+Dim myRange As Range
+Set myRange = myActiveSheet.Range("A11:Z1000")
+myRange.Clear
+
+sheetRow = 11
+
+    
+    'Find the last non-blank cell in column A(1)
+    LastRow = mySheet.Cells.Find("*", searchorder:=xlByRows, searchdirection:=xlPrevious).row
+    'Find the last non-blank cell in row 1
+    LastCol = mySheet.Cells.Find("*", searchorder:=xlByColumns, searchdirection:=xlPrevious).Column
+    
+    MsgBox "Total Row: " & LastRow & vbNewLine & _
+            "Total Column: " & LastCol & vbNewLine & "Processing will start on clicking 'OK' button"
+            
+    
+    For i = 3 To LastRow
+        sheetCol_TC = 1  '' to write value
+        sheetCol_DefectStatus = 2 '' to write value
+        sheetCol_Defect = 3  '' to write value
+        
+        ''Write values in Main sheet - TC Name
+        TC_Name = CStr(mySheet.Cells(i, 1).Value)
+        If (TC_Name = "Grand Total") Then
+            Exit For '' when it reaches last row
+        End If
+        myActiveSheet.Cells(sheetRow, sheetCol_TC).Value = TC_Name
+            
+        For j = 2 To LastCol
+            cellValue = CStr(mySheet.Cells(i, j).Value)
+                 
+            ''To find TC Status row from another sheet
+            rowNumberDump = FindOneValue(TC_Name, mySheet_Dump, 10)
+            If (rowNumberDump > 0) Then
+                statusDump = CStr(mySheet_Dump.Cells(rowNumberDump, 11).Value)
+            Else:
+                statusDump = ""
+            End If
+            myActiveSheet.Cells(sheetRow, sheetCol_DefectStatus).Value = statusDump
+            
+            '' Check if defect value exist
+            If cellValue = "1" Then
+                defectID = CStr(mySheet.Cells(2, j).Value)
+                If (defectID = "Grand Total") Then
+                    Exit For '' when it reaches last column
+                End If
+                
+                ''Write values in Main sheet - defect
+                existingDefectID = CStr(myActiveSheet.Cells(sheetRow, sheetCol_Defect).Value)
+                If (Len(existingDefectID) > 0) Then
+                    defectCombined = existingDefectID & ";" & defectID
+                    myActiveSheet.Cells(sheetRow, sheetCol_Defect).Value = defectCombined
+                Else
+                    myActiveSheet.Cells(sheetRow, sheetCol_Defect).Value = defectID
+                End If
+                
+                ''To find vendor and priority row from another sheet
+                rowNumberDump = Find(defectID, TC_Name, mySheet_Dump, 1, 10)
+                If rowNumberDump > 0 Then
+                    prioDump = CStr(mySheet_Dump.Cells(rowNumberDump, 4).Value)
+                    vendorDump = CStr(mySheet_Dump.Cells(rowNumberDump, 7).Value)
+                    
+                    datePlannedDump = CStr(mySheet_Dump.Cells(rowNumberDump, 14).Value)
+                    thirdPartyReferenceDump = CStr(mySheet_Dump.Cells(rowNumberDump, 15).Value)
+                    defectStatusDump = CStr(mySheet_Dump.Cells(rowNumberDump, 3).Value)
+                    releaseBlockingDump = CStr(mySheet_Dump.Cells(rowNumberDump, 16).Value)
+                    impactDump = CStr(mySheet_Dump.Cells(rowNumberDump, 17).Value)
+                    
+                
+                    ''Write values in Main sheet - prio
+                    existingPrio = CStr(myActiveSheet.Cells(sheetRow, sheetCol_Defect + 1).Value)
+                    If (Len(existingPrio) > 0) Then
+                        prioCombined = existingPrio & ";" & prioDump
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 1).Value = prioCombined
+                    Else
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 1).Value = prioDump
+                    End If
+                    
+                    ''Write values in Main sheet - vendor
+                    existingVendor = CStr(myActiveSheet.Cells(sheetRow, sheetCol_Defect + 2).Value)
+                    If (Len(existingVendor) > 0) Then
+                        vendorCombined = existingVendor & ";" & vendorDump
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 2).Value = vendorCombined
+                    Else
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 2).Value = vendorDump
+                    End If
+                    
+                    ''Write values in Main sheet - Date Planned
+                    existingdatePlanned = CStr(myActiveSheet.Cells(sheetRow, sheetCol_Defect + 3).Value)
+                    If (Len(existingdatePlanned) > 0) Then
+                        datePlannedCombined = existingdatePlanned & ";" & datePlannedDump
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 3).Value = datePlannedCombined
+                    Else
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 3).Value = "'" & datePlannedDump
+                    End If
+                    
+                    ''Write values in Main sheet - Third Party Reference
+                    existingThirdPartyReference = CStr(myActiveSheet.Cells(sheetRow, sheetCol_Defect + 4).Value)
+                    If (Len(existingThirdPartyReference) > 0) Then
+                        thirdPartyReferenceCombined = existingThirdPartyReference & ";" & thirdPartyReferenceDump
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 4).Value = thirdPartyReferenceCombined
+                    Else
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 4).Value = thirdPartyReferenceDump
+                    End If
+                    
+                    ''Write values in Main sheet - Defect Status
+                    existingDefectStatus = CStr(myActiveSheet.Cells(sheetRow, sheetCol_Defect + 5).Value)
+                    If (Len(existingDefectStatus) > 0) Then
+                        defectStatusCombined = existingDefectStatus & ";" & defectStatusDump
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 5).Value = defectStatusCombined
+                    Else
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 5).Value = defectStatusDump
+                    End If
+                    
+                    ''Write values in Main sheet - Release Blocking
+                    existingReleaseBlocking = CStr(myActiveSheet.Cells(sheetRow, sheetCol_Defect + 6).Value)
+                    If (Len(existingReleaseBlocking) > 0) Then
+                        releaseBlockingCombined = existingReleaseBlocking & ";" & releaseBlockingDump
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 6).Value = releaseBlockingCombined
+                    Else
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 6).Value = releaseBlockingDump
+                    End If
+                    
+                    ''Write values in Main sheet - Impact
+                    existingImpact = CStr(myActiveSheet.Cells(sheetRow, sheetCol_Defect + 7).Value)
+                    If (Len(existingImpact) > 0) Then
+                        impactCombined = existingImpact & ";" & impactDump
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 7).Value = impactCombined
+                    Else
+                        myActiveSheet.Cells(sheetRow, sheetCol_Defect + 7).Value = impactDump
+                    End If
+                
+                End If
+                
+            End If
+        Next
+        sheetRow = sheetRow + 1
+    Next
+     MsgBox "Processing done !!!"
+End Sub
+
+Function Find(aVal As String, bVal As String, SheetName As Worksheet, valOneCol As Integer, valTwoCol As Integer) As Long
+  Dim maxRow As Long
+  Dim row As Long
+  LastRow = SheetName.Cells.Find("*", searchorder:=xlByRows, searchdirection:=xlPrevious).row
+  For row = 2 To LastRow
+    Dim a As String
+    a = CStr(SheetName.Cells(row, valOneCol).Value)
+    b = CStr(SheetName.Cells(row, valTwoCol).Value)
+    If a = aVal Then
+        If b = bVal Then
+            Find = row
+            Exit Function
+        End If
+    End If
+  Next row
+  'Find = -1
+End Function
+
+Function FindOneValue(aVal As String, SheetName As Worksheet, valOneCol As Integer) As Long
+  Dim maxRow As Long
+  Dim row As Long
+  LastRow = SheetName.Cells.Find("*", searchorder:=xlByRows, searchdirection:=xlPrevious).row
+  For row = 2 To LastRow
+    Dim a As String
+    a = CStr(SheetName.Cells(row, valOneCol).Value)
+    If a = aVal Then
+        FindOneValue = row
+        Exit Function
+    End If
+  Next row
+  'Find = -1
+End Function
+
+Sub SelectUsedRegion()
+    ActiveSheet.UsedRange.Select
+End Sub
